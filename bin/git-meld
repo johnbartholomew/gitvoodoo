@@ -1,0 +1,3 @@
+#!/bin/bash
+export GIT_EXTERNAL_DIFF=/space/jpab/software/homes/meld-for-git/bin/meld-for-git
+exec git diff $*
