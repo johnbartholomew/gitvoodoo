@@ -1,0 +1,5 @@
+Note, these files are currently installed in
+
+ /usr/lib/git-core
+
+so that they aren't on the PATH but will be found by git.
