@@ -1,4 +1,5 @@
 #!/bin/sh
+# vim: set ts=8 sts=3 sw=3 et ai:
 
 # fail if a command fails
 set -e
@@ -34,5 +35,3 @@ while read info; do
 			printf '%s %s\n' ${sha1} ${objtype} ;;
 	esac
 done
-
-# vim: set ts=3 sw=3 noet ai:
