@@ -10,7 +10,9 @@ commitcountstr() {
    fi
 }
 
-headsha1=$(git rev-parse HEAD) ||
+headref=$(git symbolic-ref -q HEAD) ||
+   { echo "HEAD must be valid to use xbranch"; exit 1; }
+headsha1=$(git rev-parse --quiet --verify HEAD) ||
    { echo "HEAD must be valid to use xbranch"; exit 1; }
 if git config --get-colorbool color.xbranch; then
    colcurbranch="$(git config --get-color color.xbranch.current "green")"
@@ -31,15 +33,16 @@ fi
 print_branch() {
    local sha1="$1"
    local objtype="$2"
-   local branch="$3"
+   local ref="$3"
+   local branch="$4"
 
    # is this branch the current branch?
    local marker; local uibranch;
-   if test "$sha1" = "$headsha1"; then
+   if test "$ref" = "$headref"; then
       marker="*"
       uibranch="$colcurbranch$branch$colreset"
    else
-      marker=" "
+      test "$sha1" = "$headsha1" && marker="=" || marker=" "
       uibranch="$branch"
    fi
 
@@ -90,5 +93,5 @@ print_branch() {
 }
 
 # this is filled in by git for-each-ref and then evaluated
-fmt='print_branch %(objectname) %(objecttype) %(refname:short)'
+fmt='print_branch %(objectname) %(objecttype) %(refname) %(refname:short)'
 eval "$(git for-each-ref --shell --format="$fmt" refs/heads)"
