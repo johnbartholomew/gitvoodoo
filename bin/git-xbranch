@@ -1,0 +1,29 @@
+#!/bin/sh
+# vim: set ts=8 sts=3 sw=3 et ai:
+
+# this is filled in by git for-each-ref and then evaluated
+for_each_ref='
+   branch=%(refname:short)
+   sha1=%(objectname)
+   objtype=%(objecttype)
+   remote=$(git config --get branch."$branch".remote)
+   merge=$(git config --get branch."$branch".merge)
+   if test z"$remote" = z && test z"$merge" = z; then
+      printf "%s\n" "$branch"
+   else
+      remoteref=refs/remotes/"$remote"/${merge#refs/heads/}
+      remotesha1=$(git rev-parse "$remoteref")
+      basesha1=$(git merge-base "$sha1" "$remotesha1")
+      if test "$basesha1" = "$sha1" && test "$basesha1" = "$remotesha1"; then
+         status=" [up-to-date]"
+      elif test "$basesha1" = "$sha1"; then
+         status=" [behind by $(git rev-list --count "$sha1".."$remotesha1") commits]"
+      elif test "$basesha1" = "$remotesha1"; then
+         status=" [ahead by $(git rev-list --count "$basesha1".."$sha1") commits]"
+      else
+         status=" [diverged, $(git rev-list --count "$base".."$sha1") commits from base]"
+      fi
+      printf "%s %s %s%s\n" "$branch" "$remoteref" "$status"
+   fi
+'
+eval "$(git for-each-ref --shell --format="$for_each_ref" refs/heads)"
