@@ -56,11 +56,11 @@ print_branch() {
       remoteref="$remote"/"${merge#refs/heads/}"
       $istracking && {
          remotesha1=$(git rev-parse refs/remotes/"$remoteref" 2> /dev/null) ||
-            { istracking=false; info=" [broken: 'refs/remotes/$remoteref' doesn't exist]" ; }
+            { istracking=false; info=" [tracking broken: 'refs/remotes/$remoteref' doesn't exist]" ; }
       }
       $istracking && {
          basesha1=$(git merge-base "$sha1" "$remotesha1" 2> /dev/null) ||
-            { istracking=false; info=" [broken: no merge base found]" ; }
+            { istracking=false; info=" [full divergence: no merge base found]" ; }
       }
    }
 
