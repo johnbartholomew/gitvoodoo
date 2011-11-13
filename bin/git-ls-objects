@@ -21,7 +21,7 @@ fi
    # all unreachable objects
    git rev-list --objects --no-walk \
       $( git fsck --unreachable | grep '^unreachable commit' | cut -d' ' -f3 )
-} | sort -u |
+} | sort | uniq -w40 |
 while read info; do
    sha1=$( printf '%s' "${info}" | cut -d' ' -f1 )
    extra=$( printf '%s' "${info}" | cut -d' ' -f2 )
