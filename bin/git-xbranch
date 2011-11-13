@@ -1,6 +1,49 @@
 #!/bin/sh
 # vim: set ts=8 sts=3 sw=3 et ai:
 
+eval "$( { git rev-parse --parseopt -- "$@" || printf 'exit %d' "$?" ; } << EOX
+xbranch [options]
+
+xbranch shows a branch list, like branch, but with extra information about
+how each branch relates to its upstream or to a specified target branch.
+
+The first character of each line is '*' for the current HEAD, '=' if the
+branch matches the current HEAD, or ' ' otherwise.
+--
+rel=        a commit to relate the listed branches to
+a,all       list all branches, not just local branches
+r,remote=?  list only remote branches, or branches of a specified remote
+EOX
+)"
+
+refpatterns="refs/heads"
+relto=""
+reltosha1=""
+while test $# -gt 0; do
+   case "$1" in
+      "--rel")
+         reltosha1=$(git rev-parse --quiet --verify "$2") ||
+            { printf "'%s' does not name a commit\n" "$2" ; exit 1 ; }
+         relto=$(git rev-parse --symbolic "$2")
+         shift
+         ;;
+      "-a") refpatterns="refs/heads refs/remotes" ;;
+      "-r")
+         case "$2" in
+            -*) refpatterns=refs/remotes ;;
+            # double-quote because we give refpatterns unquoted to for-each-ref
+            *) refpatterns=refs/remotes/"$2"
+               shift
+               ;;
+         esac
+         ;;
+      "--") shift; break; ;; # end of arguments
+      *) printf "unknown argument '%s'\n" "$1" ;;
+   esac; shift
+done
+
+test $# -eq 0 || { echo "unexpected arguments" ; exit 1 ; }
+
 commitcountstr() {
    read count
    if test "$count" -eq 1; then
@@ -49,23 +92,35 @@ print_branch() {
    # find remote tracking info for the branch
    local info=""
    local istracking=true
-   local remote=$(git config --get branch."$branch".remote) || istracking=false
-   local merge=$(git config --get branch."$branch".merge) || istracking=false
-   if test z"$remote" = z || test z"$merge" = z ; then
-      istracking=false
-   fi
    local remoteref
-   $istracking && {
-      remoteref="$remote"/"${merge#refs/heads/}"
+   local basesha1; local remotesha1
+   if test z"$reltosha1" = z; then
+      # relative to corresponding upstream branch
+
+      local remote=$(git config --get branch."$branch".remote) || istracking=false
+      local merge=$(git config --get branch."$branch".merge) || istracking=false
+      if test z"$remote" = z || test z"$merge" = z ; then
+         istracking=false
+      fi
       $istracking && {
-         remotesha1=$(git rev-parse refs/remotes/"$remoteref" 2> /dev/null) ||
-            { istracking=false; info=" [tracking broken: 'refs/remotes/$remoteref' doesn't exist]" ; }
+         remoteref="$remote"/"${merge#refs/heads/}"
+         $istracking && {
+            remotesha1=$(git rev-parse --quiet --verify refs/remotes/"$remoteref" 2> /dev/null) ||
+               { istracking=false; info=" [tracking broken: 'refs/remotes/$remoteref' doesn't exist]" ; }
+         }
+         $istracking && {
+            basesha1=$(git merge-base "$sha1" "$remotesha1" 2> /dev/null) ||
+               { istracking=false; info=" [full divergence: no merge base found]" ; }
+         }
       }
+   else
+      # relative to the named commit
       $istracking && {
-         basesha1=$(git merge-base "$sha1" "$remotesha1" 2> /dev/null) ||
-            { istracking=false; info=" [full divergence: no merge base found]" ; }
+         remoteref=$relto
+         remotesha1=$reltosha1
+         basesha1=$(git merge-base "$sha1" "$remotesha1" 2> /dev/null) || istracking=false
       }
-   }
+   fi
 
    $istracking && {
       if test "$basesha1" = "$sha1" && test "$basesha1" = "$remotesha1"; then
@@ -94,4 +149,4 @@ print_branch() {
 
 # this is filled in by git for-each-ref and then evaluated
 fmt='print_branch %(objectname) %(objecttype) %(refname) %(refname:short)'
-eval "$(git for-each-ref --shell --format="$fmt" refs/heads)"
+eval "$(git for-each-ref --shell --format="$fmt" $refpatterns)"
