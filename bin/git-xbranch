@@ -29,11 +29,12 @@ else
 fi
 
 print_branch() {
-   sha1="$1"
-   objtype="$2"
-   branch="$3"
+   local sha1="$1"
+   local objtype="$2"
+   local branch="$3"
 
    # is this branch the current branch?
+   local marker; local uibranch;
    if test "$sha1" = "$headsha1"; then
       marker="*"
       uibranch="$colcurbranch$branch$colreset"
@@ -43,35 +44,47 @@ print_branch() {
    fi
 
    # find remote tracking info for the branch
-   remote=$(git config --get branch."$branch".remote) || istracking=0
-   merge=$(git config --get branch."$branch".merge) || istracking=0
-   if test z"$remote" = z || test z"$merge" = z; then
-      istracking=0
-   else
-      istracking=1
-      remoteref="$remote"/${merge#refs/heads/}
-      remotesha1=$(git rev-parse "refs/remotes/$remoteref" 2> /dev/null) || istracking=0
-      basesha1=$(git merge-base "$sha1" "$remotesha1" 2> /dev/null) || istracking=0
+   local info=""
+   local istracking=true
+   local remote=$(git config --get branch."$branch".remote) || istracking=false
+   local merge=$(git config --get branch."$branch".merge) || istracking=false
+   if test z"$remote" = z || test z"$merge" = z ; then
+      istracking=false
    fi
+   local remoteref
+   $istracking && {
+      remoteref="$remote"/"${merge#refs/heads/}"
+      $istracking && {
+         remotesha1=$(git rev-parse refs/remotes/"$remoteref" 2> /dev/null) ||
+            { istracking=false; info=" [broken: 'refs/remotes/$remoteref' doesn't exist]" ; }
+      }
+      $istracking && {
+         basesha1=$(git merge-base "$sha1" "$remotesha1" 2> /dev/null) ||
+            { istracking=false; info=" [broken: no merge base found]" ; }
+      }
+   }
 
-   if test $istracking -eq 0; then
-      printf "%s %s\n" "$marker" "$uibranch"
-   else
+   $istracking && {
       if test "$basesha1" = "$sha1" && test "$basesha1" = "$remotesha1"; then
          # HEAD is up-to-date
-         status=" [${coluptodate}up-to-date${colreset}]"
+         info=" [${coluptodate}up-to-date${colreset} with '${remoteref}']"
       elif test "$basesha1" = "$sha1"; then
          # HEAD is behind upstream
-         status=" [${colbehind}behind${colreset} by $(git rev-list --count "$sha1".."$remotesha1" | commitcountstr)]"
+         local count="$(git rev-list --count "$sha1".."$remotesha1" | commitcountstr)"
+         info=" [${colbehind}behind${colreset} '${remoteref}' by ${count}]"
       elif test "$basesha1" = "$remotesha1"; then
          # upstream is behind HEAD
-         status=" [${colahead}ahead${colreset} by $(git rev-list --count "$basesha1".."$sha1" | commitcountstr)]"
+         local count="$(git rev-list --count "$basesha1".."$sha1" | commitcountstr)"
+         info=" [${colahead}ahead${colreset} of '${remoteref}' by ${count}]"
       else
          # upstream and HEAD have diverged
-         status=" [${coldiverged}diverged${colreset}, $(git rev-list --count "$base".."$sha1" | commitcountstr) from base]"
+         local counthead="$(git rev-list --count "$basesha1".."$sha1" | commitcountstr)"
+         local countremote="$(git rev-list --count "$basesha1".."$remotesha1" | commitcountstr)"
+         info=" [${coldiverged}diverged${colreset} from '${remoteref}', by ${counthead}/${countremote} (us/them)]"
       fi
-      printf "%s %s %s %s%s\n" "$marker" "$uibranch" "$remoteref" "$status"
-   fi
+   }
+
+   printf "%s %s%s\n" "$marker" "$uibranch" "$info"
 
    return 0
 }
