@@ -1,5 +1,41 @@
-These files should be installed in
+gitvoodoo
+=========
+
+This is a small set of helper scripts that extend git with some extra
+commands. In particular:
+
+  - git ls-objects --- List *all* the objects in the repository.
+    (ls-objects uses logic suggested by '' on StackOverflow)
+
+  - git merge-into <branch> --- Create a new (non-fast-foward) merge commit
+    on the specified branch, which merges HEAD into it. This is only
+    possible in cases where the merge *could* be done as a fast-forward.
+    (merge-into uses logic suggested by '' on StackOverflow)
+
+  - git xbranch [options] --- A more informative branch listing, to use when
+    'git branch' doesn't give enough information. xbranch shows how each
+    branch relates to its tracking (upstream) branch (up-to-date/ahead/
+    behind/diverged, and how far, counted in commits); alternatively, it
+    can show the relation of each listed branch to a commit specified on
+    the command line. It lists local branches by default, but can also list
+    all branches (-a) or remote branches (-r), or remote branches for one
+    specified remote (-r<remote name>).
+
+Other scripts in this repository (git-meld and meld-for-git) are irrelevant
+for most git installs, particularly recent gits which have built in support
+for running meld. bin/git-meld hard-codes a path that won't work for anyone
+else.
+
+The scripts are released under the GNU General Public License, version 3,
+a copy of which is included in the file `COPYING'.
+
+Some scripts include logic which was provided by users on StackOverflow.
+These are attributed in comments in the scripts.
+
+The scripts (in bin/ in this repository) should be installed in
 
  /usr/lib/git-core
 
 so that they will be found by git.
+
+# vim: set ts=8 sts=4 sw=4 et noai tw=76 wm=6 wrap:
