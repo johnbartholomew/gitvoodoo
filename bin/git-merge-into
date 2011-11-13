@@ -69,3 +69,5 @@ newcommit=$(echo "$commitmsg" | git commit-tree $fromtree -p $basecommit -p $fro
 #  fail if something else comes in and updates the ref between when we find all our
 #  sha1s and when we finally update the branch tip)
 git update-ref -m "merge $from: Merge made by simulated no-ff" "refs/heads/$into" $newcommit $basecommit || exit 1
+
+printf "merged '%s' into '%s', using simulated no-fast-foward\n" "$from" "$into"
