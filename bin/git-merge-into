@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # vim: set ts=8 sts=3 sw=3 et ai:
 
 # Magic git voodoo
@@ -6,8 +6,8 @@
 # Courtesy of Jefromi on stackoverflow
 #   http://stackoverflow.com/questions/3408532/merging-without-changing-the-working-directory/3409382#3409382
 
-# or take an argument:
-if [ $# -ge 1 ]; then
+# one required positional argument
+if test $# -ge 1; then
     into=$1;
 else
 	echo "error: you must specify a target branch"
@@ -21,14 +21,15 @@ if ! git rev-parse --verify --quiet --heads "$into" > /dev/null; then
 fi
 
 # find the branch name associated with HEAD
-from=$(git symbolic-ref --quiet HEAD | sed 's@refs/heads/@@')
+from=$(git symbolic-ref --quiet HEAD)
+from=${from#refs/heads/#}
 
 intocommit=$(git rev-parse "$into")
 basecommit=$(git merge-base $intocommit HEAD)
 fromcommit=$(git rev-parse HEAD)
 
 # make sure this could be a fast-forward   
-if [ "$basecommit" != "$intocommit" ]; then
+if test "$basecommit" != "$intocommit"; then
     echo "error: merging '$from' into '$into' would not be a fast-forward"
     exit 1
 fi
@@ -37,7 +38,7 @@ basetree=$(git log -n 1 --pretty=%T $basecommit)
 fromtree=$(git log -n 1 --pretty=%T $fromcommit)
 
 # avoid obvious repetition (running merge-into twice in succession)
-if [ "$basetree" == "$fromtree" ]; then
+if test "$basetree" = "$fromtree"; then
     echo "error: cowardly refusing to merge when '$from' and '$into' are already equal"
     exit 1
 fi
