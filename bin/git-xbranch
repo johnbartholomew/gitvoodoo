@@ -63,6 +63,7 @@ if git config --get-colorbool color.xbranch; then
    colbehind="$(git config --get-color color.xbranch.behind "yellow bold")"
    coluptodate="$(git config --get-color color.xbranch.uptodate "green bold")"
    coldiverged="$(git config --get-color color.xbranch.diverged "red bold")"
+   colbroken="$(git config --get-color color.xbranch.broken "red bold")"
    colreset="$(git config --get-color "" "reset")"
 else
    colcurbranch=""
@@ -70,6 +71,7 @@ else
    colbehind=""
    coluptodate=""
    coldiverged=""
+   colbroken=""
    colreset=""
 fi
 
@@ -106,11 +108,11 @@ print_branch() {
          remoteref="$remote"/"${merge#refs/heads/}"
          $istracking && {
             remotesha1=$(git rev-parse --quiet --verify refs/remotes/"$remoteref" 2> /dev/null) ||
-               { istracking=false; info=" [tracking broken: 'refs/remotes/$remoteref' doesn't exist]" ; }
+               { istracking=false; info=" [${colbroken}tracking broken${colreset}: 'refs/remotes/$remoteref' doesn't exist]" ; }
          }
          $istracking && {
             basesha1=$(git merge-base "$sha1" "$remotesha1" 2> /dev/null) ||
-               { istracking=false; info=" [full divergence: no merge base found]" ; }
+               { istracking=false; info=" [${colbroken}full divergence${colreset}: no merge base found]" ; }
          }
       }
    else
