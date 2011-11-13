@@ -8,16 +8,16 @@
 
 # one required positional argument
 if test $# -ge 1; then
-    into=$1;
+   into=$1
 else
-	echo "error: you must specify a target branch"
-	exit 1
+   echo "error: you must specify a target branch"
+   exit 1
 fi
 
 # make sure the branch exists
 if ! git rev-parse --verify --quiet --heads "$into" > /dev/null; then
-    echo "error: target branch '$into' does not exist"
-    exit 1
+   echo "error: target branch '$into' does not exist"
+   exit 1
 fi
 
 # find the branch name associated with HEAD
@@ -30,8 +30,8 @@ fromcommit=$(git rev-parse HEAD)
 
 # make sure this could be a fast-forward   
 if test "$basecommit" != "$intocommit"; then
-    echo "error: merging '$from' into '$into' would not be a fast-forward"
-    exit 1
+   echo "error: merging '$from' into '$into' would not be a fast-forward"
+   exit 1
 fi
 
 basetree=$(git log -n 1 --pretty=%T $basecommit)
@@ -39,8 +39,8 @@ fromtree=$(git log -n 1 --pretty=%T $fromcommit)
 
 # avoid obvious repetition (running merge-into twice in succession)
 if test "$basetree" = "$fromtree"; then
-    echo "error: cowardly refusing to merge when '$from' and '$into' are already equal"
-    exit 1
+   echo "error: cowardly refusing to merge when '$from' and '$into' are already equal"
+   exit 1
 fi
 
 # create the new commit object
@@ -48,4 +48,3 @@ commitmsg="Merge branch '$from'"
 newcommit=$(echo "$commitmsg" | git commit-tree $fromtree -p $basecommit -p $fromcommit)
 # move the branch to point to the new commit
 git update-ref -m "merge $from: Merge made by simulated no-ff" "refs/heads/$into" $newcommit $basecommit
-
