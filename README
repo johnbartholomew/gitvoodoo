@@ -21,6 +21,10 @@ commands. In particular:
     all branches (-a) or remote branches (-r), or remote branches for one
     specified remote (-r<remote name>).
 
+  - git create-ref [options] <ref> <commitish> --- A wrapper for update-ref
+    that adds the 40-character null SHA1 as an extra argument to ensure that
+    the ref being created does not already exist.
+
 Other scripts in this repository (git-meld and meld-for-git) are irrelevant
 for most git installs, particularly recent gits which have built in support
 for running meld. bin/git-meld hard-codes a path that won't work for anyone
